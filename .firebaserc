@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "stritwise-app",
+    "production": "stritwise-capstone-2018"
+  }
+}
