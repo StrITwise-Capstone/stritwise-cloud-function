@@ -7,8 +7,8 @@ admin.firestore().settings({
     timestampsInSnapshots: true,
   });
 
-exports.users = require('./functions/users');
 exports.points = require('./functions/points');
+exports.transactions = require('./functions/transactions');
 
 // Deply new Functions :  firebase deploy --only functions
 // Define new project alias :  firebase use --add 
