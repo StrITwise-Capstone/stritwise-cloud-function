@@ -1,8 +1,8 @@
 const functions = require('firebase-functions');
 
 const users = require("./users");
-//const students = require("./students");
-//const volunteers = require("./volunteers");
+const students = require("./students");
+const volunteers = require("./volunteers");
 
 module.exports = functions.firestore
   .document('transactions/{transactionId}')
@@ -17,6 +17,10 @@ module.exports = functions.firestore
           return users.create(transaction, transactionId);
         case 'DELETE_USER':
           return users.delete(transaction);
+        case 'ADD_STUDENT':
+          return students.create(transaction, transactionId);
+        case 'ADD_VOLUNTEER':
+          return volunteers.create(transaction, transactionId);
         default:
           return null;
       }
