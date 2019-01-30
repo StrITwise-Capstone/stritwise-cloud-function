@@ -13,10 +13,10 @@ module.exports = (transaction, transactionId) =>{
       }).then((student) => {
         console.log("adding student entry now", student.uid);
         delete transaction.data.password;
-        return createStudentEntry(transaction.data.eventId, student.uid, transaction.data, transactionId);
+        return createStudentEntry(student.uid, transaction, transactionId);
       }).catch(err => {
         if (err.code === 'auth/email-already-exists') {
-          return createExistingStudent(transaction.data.email, transaction.data.eventId, transaction, transactionId);
+          return createExistingStudent(transaction, transactionId);
         } else {
           console.log('cloudFunction-studentCreate failed', err);
           return helper.completeTransaction(false, transactionId, err);
@@ -24,26 +24,26 @@ module.exports = (transaction, transactionId) =>{
       });
 }
 
-const createExistingStudent = (studentEmail, eventId, transaction, transactionId) =>{
-    return admin.auth().getUserByEmail(studentEmail).then(student =>{
+const createExistingStudent = (transaction, transactionId) =>{
+    return admin.auth().getUserByEmail(transaction.data.email).then(student =>{
         console.log("updating existing student acc now", student.uid);
-        return updateExistingAcc(eventId, student.uid, transaction, transactionId);
+        return updateExistingAcc(student.uid, transaction, transactionId);
     }).catch(err => (console.log('function-createExistingStudent failed', err)));
 }
 
-const updateExistingAcc = (eventId, studentId, transaction, transactionId) =>{
+const updateExistingAcc = (studentId, transaction, transactionId) =>{
     return admin.auth().updateUser(studentId, {
         password: transaction.data.password,
       })
         .then(student => {
             delete transaction.data.password;
-            return createStudentEntry(eventId, student.uid, transaction.data, transactionId);
+            return createStudentEntry(student.uid, transaction, transactionId);
         })
         .catch(err => (console.log('function-updateExistingStudentAcc failed', err)));
 }
 
-const createStudentEntry = (eventId, studentId, studentData, transactionId) => {
-  return admin.firestore().collection('events').doc(eventId).collection('students').doc(studentId).set(studentData)
+const createStudentEntry = (studentId, transaction, transactionId) => {
+  return admin.firestore().collection('events').doc(transaction.data.eventId).collection('students').doc(studentId).set(transaction.data)
     .then( doc => {
       console.log('New student Added', doc);
       return deleteDataFromTransaction(transactionId);

@@ -13,10 +13,10 @@ module.exports = (transaction, transactionId) =>{
       }).then((volunteer) => {
         console.log("adding volunteer entry now", volunteer.uid);
         delete transaction.data.password;
-        return createVolunteerEntry(transaction.data.eventId, volunteer.uid, transaction.data, transactionId);
+        return createVolunteerEntry(volunteer.uid, transaction, transactionId);
       }).catch(err => {
         if (err.code === 'auth/email-already-exists') {
-          return createExistingVolunteer(transaction.data.email, transaction.data.eventId, transaction, transactionId);
+          return createExistingVolunteer(transaction, transactionId);
         } else {
           console.log('cloudFunction-volunteerCreate failed', err);
           return helper.completeTransaction(false, transactionId, err);
@@ -24,26 +24,26 @@ module.exports = (transaction, transactionId) =>{
       });
 }
 
-const createExistingVolunteer = (volunteerEmail, eventId, transaction, transactionId) =>{
-    return admin.auth().getUserByEmail(volunteerEmail).then(volunteer =>{
+const createExistingVolunteer = (transaction, transactionId) =>{
+    return admin.auth().getUserByEmail(transaction.data.email).then(volunteer =>{
         console.log("updating existing volunteer acc now", volunteer.uid);
-        return updateExistingAcc(eventId, volunteer.uid, transaction, transactionId);
+        return updateExistingAcc(volunteer.uid, transaction, transactionId);
     }).catch(err => (console.log('function-createExistingVolunteer failed', err)));
 }
 
-const updateExistingAcc = (eventId, volunteerId, transaction, transactionId) =>{
+const updateExistingAcc = (volunteerId, transaction, transactionId) =>{
     return admin.auth().updateUser(volunteerId, {
         password: transaction.data.password,
       })
         .then(volunteer => {
             delete transaction.data.password;
-            return createVolunteerEntry(eventId, volunteer.uid, transaction.data, transactionId);
+            return createVolunteerEntry(volunteer.uid, transaction, transactionId);
         })
         .catch(err => (console.log('function-updateExistingVolunteerAcc failed', err)));
 }
 
-const createVolunteerEntry = (eventId, volunteerId, volunteerData, transactionId) => {
-  return admin.firestore().collection('events').doc(eventId).collection('volunteers').doc(volunteerId).set(volunteerData)
+const createVolunteerEntry = (volunteerId, transaction, transactionId) => {
+  return admin.firestore().collection('events').doc(transaction.data.eventId).collection('volunteers').doc(volunteerId).set(transaction.data)
     .then( doc => {
       console.log('New volunteer Added', doc);
       return deleteDataFromTransaction(transactionId);
