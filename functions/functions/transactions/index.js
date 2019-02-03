@@ -4,6 +4,10 @@ const users = require("./users");
 const students = require("./students");
 const volunteers = require("./volunteers");
 
+/**
+ * Triggers when a new transaction document is created in the transaction collection,
+ * handles transactions based on the transaction_type of the new transaction document.
+ */
 module.exports = functions.firestore
   .document('transactions/{transactionId}')
   .onCreate((snap, context) => {

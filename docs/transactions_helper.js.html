@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>JSDoc: Source: transactions/helper.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,36 +17,36 @@
 
 <div id="main">
 
-    <h1 class="page-title">Home</h1>
+    <h1 class="page-title">Source: transactions/helper.js</h1>
 
     
 
 
 
     
-
-
-    <h3> </h3>
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
     <section>
-        <article><p>stritwise-cloud-function</p></article>
+        <article>
+            <pre class="prettyprint source linenums"><code>const admin = require('firebase-admin');
+
+/**
+ * Updates a transaction document with completed status and corresponding error message if applicable
+ * @param {boolean} completed - Status of the transaction
+ * @param {string} transactionId - Id of a specific transaction document
+ * @param {Object} error - Error Object that contains error messeage and error code
+ */
+exports.completeTransaction = (completed, transactionId, error=null) => {
+    updateValues = {
+      'completed': completed,
+    }
+    if (error !== null) {
+      updateValues.errorMessage = error.message;
+    }
+    return admin.firestore().collection('transactions').doc(transactionId).update(updateValues)
+      .then( doc => (console.log('transactionStatus has been updated', doc)))
+      .catch(err => (console.log('function-updateTransactionStatus failed', err)));
+}</code></pre>
+        </article>
     </section>
-
-
 
 
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>JSDoc: Source: transactions/index.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,36 +17,48 @@
 
 <div id="main">
 
-    <h1 class="page-title">Home</h1>
+    <h1 class="page-title">Source: transactions/index.js</h1>
 
     
 
 
 
     
-
-
-    <h3> </h3>
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
     <section>
-        <article><p>stritwise-cloud-function</p></article>
+        <article>
+            <pre class="prettyprint source linenums"><code>const functions = require('firebase-functions');
+
+const users = require("./users");
+const students = require("./students");
+const volunteers = require("./volunteers");
+
+/**
+ * Triggers when a new transaction document is created in the transaction collection,
+ * handles transactions based on the transaction_type of the new transaction document.
+ */
+module.exports = functions.firestore
+  .document('transactions/{transactionId}')
+  .onCreate((snap, context) => {
+    // Get an object representing the document
+    // e.g. {'name': 'Marie', 'age': 66}
+    // Create user using admin SDK
+    const transaction = snap.data();
+    const transactionId = context.params.transactionId;
+    switch(transaction.transaction_type) {
+        case 'ADD_USER':
+          return users.create(transaction, transactionId);
+        case 'DELETE_USER':
+          return users.delete(transaction, transactionId);
+        case 'ADD_STUDENT':
+          return students.create(transaction, transactionId);
+        case 'ADD_VOLUNTEER':
+          return volunteers.create(transaction, transactionId);
+        default:
+          return null;
+      }
+  });</code></pre>
+        </article>
     </section>
-
-
 
 
 
