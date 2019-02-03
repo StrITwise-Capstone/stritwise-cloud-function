@@ -16,7 +16,7 @@ module.exports = functions.firestore
         case 'ADD_USER':
           return users.create(transaction, transactionId);
         case 'DELETE_USER':
-          return users.delete(transaction);
+          return users.delete(transaction, transactionId);
         case 'ADD_STUDENT':
           return students.create(transaction, transactionId);
         case 'ADD_VOLUNTEER':
