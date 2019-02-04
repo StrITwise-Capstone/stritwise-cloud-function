@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: transactions/volunteers/create.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: transactions/volunteers/create.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const admin = require('firebase-admin');
+
+const helper = require('../helper.js');
+
+//Transaction Type: "ADD_VOLUNTEER"
+
+/**
+ * Triggers when a new transaction document of type "ADD_VOLUNTEER" is created in the transaction collection.
+ * Creates the volunteer account and calls other various functions
+ * @param {Object} transaction - transaction object containing the data of the user
+ * @param {string} transactionId - Id of the transaction document
+ */
+module.exports = (transaction, transactionId) =>{
+
+    return admin.auth().createUser({
+        email: transaction.data.email,
+        emailVerified: true,
+        password: transaction.data.password,
+      }).then((volunteer) => {
+        console.log("adding volunteer entry now", volunteer.uid);
+        delete transaction.data.password;
+        return createVolunteerEntry(volunteer.uid, transaction, transactionId);
+      }).catch(err => {
+        if (err.code === 'auth/email-already-exists') {
+          return createExistingVolunteer(transaction, transactionId);
+        } else {
+          console.log('cloudFunction-volunteerCreate failed', err);
+          return helper.completeTransaction(false, transactionId, err);
+        }
+      });
+}
+
+/**
+ * Function that is invoked when an existing volunteer account exists in Firebase.
+ * @param {Object} transaction - transaction object containing the data of the user.
+ * @param {string} transactionId - Id of the transaction document.
+ */
+const createExistingVolunteer = (transaction, transactionId) =>{
+    return admin.auth().getUserByEmail(transaction.data.email).then(volunteer =>{
+        console.log("updating existing volunteer acc now", volunteer.uid);
+        return updateExistingAcc(volunteer.uid, transaction, transactionId);
+    }).catch(err => (console.log('function-createExistingVolunteer failed', err)));
+}
+
+/**
+ * Function that is invoked to update the password of an existing volunteer account that exists in Firebase.
+ * @param {string} volunteerId - Id of the volunteer document.
+ * @param {Object} transaction - transaction object containing the data of the user.
+ * @param {string} transactionId - Id of the transaction document.
+ */
+const updateExistingAcc = (volunteerId, transaction, transactionId) =>{
+    return admin.auth().updateUser(volunteerId, {
+        password: transaction.data.password,
+      })
+        .then(volunteer => {
+            delete transaction.data.password;
+            return createVolunteerEntry(volunteer.uid, transaction, transactionId);
+        })
+        .catch(err => (console.log('function-updateExistingVolunteerAcc failed', err)));
+}
+/**
+ * Creates a data entry of the volunteer in the volunteers collection.
+ * @param {string} volunteerId - Id of the volunteer document.
+ * @param {Object} transaction - transaction object containing the data of the user.
+ * @param {string} transactionId - Id of the transaction document.
+ */
+const createVolunteerEntry = (volunteerId, transaction, transactionId) => {
+  return admin.firestore().collection('events').doc(transaction.data.eventId).collection('volunteers').doc(volunteerId).set(transaction.data)
+    .then( doc => {
+      console.log('New volunteer Added', doc);
+      return deleteDataFromTransaction(transactionId);
+    })
+    .catch(err => (console.log('function-createVolunteerEntry failed', err)));
+}
+
+/**
+ * Deletes the password field from the transaction document.
+ * @param {string} transactionId - Id of the transaction document.
+ */
+const deleteDataFromTransaction = (transactionId) => {
+  return admin.firestore().collection('transactions').doc(transactionId).update({ 
+    'data.password': admin.firestore.FieldValue.delete()
+  })
+  .then( doc => {
+    console.log('transaction data has been deleted', doc);
+    return helper.completeTransaction(true, transactionId);
+  })
+  .catch(err => (console.log('function-deleteDataFromTransactionVolunteer failed', err)));
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#completeTransaction">completeTransaction</a></li><li><a href="global.html#createExistingStudent">createExistingStudent</a></li><li><a href="global.html#createExistingVolunteer">createExistingVolunteer</a></li><li><a href="global.html#createStudentEntry">createStudentEntry</a></li><li><a href="global.html#createUserEntry">createUserEntry</a></li><li><a href="global.html#createVolunteerEntry">createVolunteerEntry</a></li><li><a href="global.html#deleteDataFromTransaction">deleteDataFromTransaction</a></li><li><a href="global.html#deleteUserEntry">deleteUserEntry</a></li><li><a href="global.html#updateCredit">updateCredit</a></li><li><a href="global.html#updateExistingAcc">updateExistingAcc</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Feb 04 2019 04:11:58 GMT+0800 (Russia TZ 7 Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
